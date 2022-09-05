@@ -16495,8 +16495,8 @@ The top 10 recommendations for user 20 are the following article names:
     <span class="c1"># where each class is a separate article. Since encoding is binary we will use 1.0 for positive class</span>
     <span class="c1"># average=&#39;macro&#39; because we have clearly ubalanced classes </span>
     <span class="c1">#train_f1.append(F1(np.array(user_item_train).flatten(), train_preds.flatten(), average=&#39;binary&#39;))</span>
-    <span class="n">f1_test</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">F1</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">user_item_prediction</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">test_predictions</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">))</span>
-    <span class="n">f1_train</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">F1</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">user_item_train</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">train_predictions</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">))</span>
+    <span class="n">f1_test</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">F1</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">user_item_prediction</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">test_predictions</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">))</span>
+    <span class="n">f1_train</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">F1</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">user_item_train</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">train_predictions</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">))</span>
     <span class="c1">#test_f1.append(F1(np.array(user_item_to_predict).flatten(), test_preds.flatten(), average=&#39;binary&#39;))</span>
 </pre></div>
 
@@ -16586,13 +16586,26 @@ The top 10 recommendations for user 20 are the following article names:
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <p><font color='blue'></p>
 <ul>
-<li><p>I've used F1 score to measure the quality of predictions for matrix factorization, as we can see from the results above the quality of prediction is very poor and I would not recommend to deploy this method for this kind of data we have here.</p>
+<li><p>Before deploying a matrix factorization based model into production we would need to measure an accuaracy of a model in order to establish if it's reasonable to deploy it.</p>
 <ul>
+<li>I've used F1 score to measure the quality of predictions for matrix factorization, which is perfectly legit in this case as our model serves as a classifier.  F1 score combines precision and recall into a single metric, hence it serves as the balanced representation of a classifier model's accuracy.</li>
+<li>A good model would show F1 score above 50% - meaning it can predict users article choice more than in half cases. </li>
+<li>As we can see from the results above the quality of prediction is very poor (F1 is around 6% only) and I would not recommend to deploy this method for this kind of data we have here.</li>
 <li>This primarily happens due to the cold start problem - we have too few information about most of the users hence the latent features matrix won't represent the preference of the majority of the users.</li>
 <li>This method may work better if we would have more knowledge about our users.</li>
 </ul>
 </li>
-<li><p>I would recommend to start with user-user collaborative filtering recomendations first to gather more knowledge about our user preferences and later try matrix factorization approach.</p>
+<li><p>I would recommend to start with user-user collaborative filtering recommendations first to gather more knowledge about our user preferences and later try matrix factorization approach.</p>
+<ul>
+<li>to measure an improvement of collaborative filtering we can run an A/B test. <ul>
+<li>Target metric can potentially be an article Click Through Rate (CTR)</li>
+<li>H1: deploying collaborative filtering recommendations would result in higher CTR among our users</li>
+<li>We can split users ramndomly into 50/50 test and control groups. Test users would be exposed to co-lab filtering recommendations, while control would see randomly recommended articles.</li>
+<li>Since we are not making any assumptions about our population distribution we can use Chi-Square Test with the standard confidence level of 95%</li>
+<li>We can run an experiment for as long as we reach the expected confidence level or we can run Power Test beforehand to calculate the sample size.</li>
+</ul>
+</li>
+</ul>
 </li>
 <li><p>I would also suggest to use reading time (currently we don't have this data) as proxy for measuring user article ranking, to later try Funk-SVD approach.</p>
 </li>
